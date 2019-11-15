@@ -1,4 +1,4 @@
-import Cpu from './Cpu';
+import Cpu from '../cpu/Cpu';
 
 export default class Bus {
   cpu: Cpu = new Cpu(this);

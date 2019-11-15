@@ -1,3 +1,3 @@
-import Bus from './Bus';
+import Bus from './bus/Bus';
 
 console.log(Bus);

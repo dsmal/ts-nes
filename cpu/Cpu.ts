@@ -1,5 +1,6 @@
 import Bus from '../bus/Bus';
 import CpuFlags from './CpuFlags';
+import { AddressingMode, OperationType, address, opCodes, operate } from './Instructions';
 
 export default class Cpu {
   bus: Bus;
@@ -29,7 +30,16 @@ export default class Cpu {
     this.bus.write(address, data);
   }
 
-  clock() {}
+  clock() {
+    if (this.cycles === 0) {
+      this.opcode = this.read(this.programCounter);
+      const [operation, addressing, cycles] = opCodes[this.opcode];
+      this.programCounter += 1;
+      this.cycles += (address(addressing, this) & operate(operation, this));
+    }
+    this.cycles -= 1;
+  }
+
   reset() {}
   irq() {}
   nmi() {}
