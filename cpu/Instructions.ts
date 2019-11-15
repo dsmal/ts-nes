@@ -195,6 +195,70 @@ export const opCodes: { [key: number]: number[] }  = {
 };
 
 export function address(mode: AddressingMode, cpu: Cpu) {
+  switch (mode) {
+    case AddressingMode.IMPLIED:
+    case AddressingMode.ACCUMULATOR:
+      cpu.fetched = cpu.acc;
+      return 0;
+    case AddressingMode.IMMEDIATE:
+      cpu.absoluteAddress = cpu.pc;
+      cpu.pc += 1;
+      return 0;
+    case AddressingMode.ZEROPAGE:
+      cpu.absoluteAddress = cpu.readPc();
+      return 0;
+    case AddressingMode.ZEROPAGE_X:
+      cpu.absoluteAddress = cpu.readPc() + cpu.x;
+      cpu.absoluteAddress &= 0x00FF;
+      return 0;
+    case AddressingMode.ZEROPAGE_Y:
+      cpu.absoluteAddress = cpu.readPc() + cpu.y;
+      cpu.absoluteAddress &= 0x00FF;
+      return 0;
+    case AddressingMode.ABSOLUTE: {
+      const lo = cpu.readPc();
+      const hi = cpu.readPc();
+      cpu.absoluteAddress = (hi << 8) | lo;
+      return 0;
+    }
+    case AddressingMode.ABSOLUTE_X: {
+      const lo = cpu.readPc();
+      const hi = cpu.readPc();
+      cpu.absoluteAddress = (hi << 8) | lo;
+      cpu.absoluteAddress += cpu.x;
+      return (cpu.absoluteAddress & 0xFF00) !== (hi << 8) ? 1 : 0;
+    }
+    case AddressingMode.INDIRECT: {
+      const lo = cpu.readPc();
+      const hi = cpu.readPc();
+      const ptr = (hi << 8) | lo;
+      const isNewPage = lo === 0x00FF; // Emulate hardware bug (see: http://nesdev.com/6502bugs.txt)
+      cpu.absoluteAddress = (cpu.read(isNewPage ? ptr & 0xFF00 : ptr + 1) << 8) | cpu.read(ptr);
+      return 0;
+    }
+    case AddressingMode.INDIRECT_X: {
+      const t = cpu.readPc();
+      const lo = cpu.read((t + cpu.x) & 0x00FF);
+      const hi = cpu.read((t + cpu.x + 1) & 0x00FF);
+      cpu.absoluteAddress = (hi << 8) | lo;
+      return 0;
+    }
+    case AddressingMode.INDIRECT_Y: {
+      const t = cpu.readPc();
+      const lo = cpu.read(t & 0x00FF);
+      const hi = cpu.read((t + 1) & 0x00FF);
+      cpu.absoluteAddress = (hi << 8) | lo;
+      cpu.absoluteAddress += cpu.y;
+      return (cpu.absoluteAddress & 0xFF00) !== (hi << 8) ? 1 : 0;
+    }
+    case AddressingMode.RELATIVE: {
+      cpu.relativeAddress = cpu.readPc();
+      if (cpu.relativeAddress & 0x80) {
+        cpu.relativeAddress |= 0xFF00;
+      }
+      return 0;
+    }
+  }
   return 0;
 }
 

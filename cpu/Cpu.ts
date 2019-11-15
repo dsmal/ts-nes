@@ -1,6 +1,6 @@
 import Bus from '../bus/Bus';
 import CpuFlags from './CpuFlags';
-import { AddressingMode, OperationType, address, opCodes, operate } from './Instructions';
+import { address, operate, opCodes } from './Instructions';
 
 export default class Cpu {
   bus: Bus;
@@ -9,7 +9,7 @@ export default class Cpu {
   x = 0x00;
   y = 0x00;
   stackPointer = 0x00;
-  programCounter = 0x00;
+  pc = 0x00;
   status = 0x00;
 
   fetched = 0x00;
@@ -26,16 +26,22 @@ export default class Cpu {
     return this.bus.read(address);
   }
 
+  readPc(): number {
+    const result = this.read(this.pc);
+    this.pc += 1;
+    return result;
+  }
+
   write(address: number, data: number) {
     this.bus.write(address, data);
   }
 
   clock() {
     if (this.cycles === 0) {
-      this.opcode = this.read(this.programCounter);
+      this.opcode = this.read(this.pc);
       const [operation, addressing, cycles] = opCodes[this.opcode];
-      this.programCounter += 1;
-      this.cycles += (address(addressing, this) & operate(operation, this));
+      this.pc += 1;
+      this.cycles += cycles + (address(addressing, this) & operate(operation, this));
     }
     this.cycles -= 1;
   }
