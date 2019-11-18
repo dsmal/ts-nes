@@ -277,6 +277,35 @@ function branch(condition: number | boolean, cpu: Cpu) {
 
 export function operate(operation: OperationType, cpu: Cpu) {
   switch (operation) {
+    case OperationType.NOP:
+      return 0;
+    case OperationType.LDA:
+      cpu.fetch();
+      cpu.acc = cpu.fetched;
+      cpu.setFlag(Flags.Zero, cpu.acc === 0x00);
+      cpu.setFlag(Flags.Negative, cpu.acc & 0x80);
+      return 1;
+    case OperationType.STA:
+      cpu.write(cpu.absoluteAddress, cpu.acc);
+      return 0;
+    case OperationType.LDX:
+      cpu.fetch();
+      cpu.x = cpu.fetched;
+      cpu.setFlag(Flags.Zero, cpu.x === 0x00);
+      cpu.setFlag(Flags.Negative, cpu.x & 0x80);
+      return 1;
+    case OperationType.STX:
+      cpu.write(cpu.absoluteAddress, cpu.x);
+      return 0;
+    case OperationType.LDY:
+      cpu.fetch();
+      cpu.y = cpu.fetched;
+      cpu.setFlag(Flags.Zero, cpu.x === 0x00);
+      cpu.setFlag(Flags.Negative, cpu.x & 0x80);
+      return 1;
+    case OperationType.STY:
+      cpu.write(cpu.absoluteAddress, cpu.y);
+      return 0;
     case OperationType.AND:
       cpu.fetch();
       cpu.acc  = cpu.acc & cpu.fetched;
@@ -358,7 +387,6 @@ export function operate(operation: OperationType, cpu: Cpu) {
       cpu.status = cpu.read(cpu.stackHead);
       cpu.status &= ~Flags.Break;
       cpu.status &= ~Flags.Unused;
-
       cpu.stackPointer += 1;
       cpu.pc = cpu.read(cpu.stackHead);
       cpu.stackPointer += 1;
