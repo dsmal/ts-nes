@@ -4,17 +4,23 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "start": "tsc -w",
-    "lint": "tslint --project .",
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "dev": "npm-run-all --parallel start watch",
+    "start": "serve public",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "rollup-plugin-typescript": "^1.0.1",
+    "tslib": "^1.10.0",
     "tslint": "^5.20.1",
-    "typescript": "^3.7.2"
+    "typescript": "^3.7.2",
+    "rollup-plugin-livereload": "^1.0.4",
+    "rollup-plugin-serve": "^1.0.1",
+    "tslint-config-airbnb": "^5.11.2"
   },
   "dependencies": {
-    "tslint-config-airbnb": "^5.11.2"
   }
 }
