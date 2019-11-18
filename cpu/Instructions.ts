@@ -342,17 +342,28 @@ export function operate(operation: OperationType, cpu: Cpu) {
       return 1;
     }
     case OperationType.PHA: {
-      cpu.write(0x0100 + cpu.stackPointer, cpu.acc);
+      cpu.write(cpu.stackHead, cpu.acc);
       cpu.stackPointer -= 1;
       return 0;
     }
     case OperationType.PLA: {
       cpu.stackPointer += 1;
-      cpu.acc = cpu.read(0x0100 + cpu.stackPointer);
+      cpu.acc = cpu.read(cpu.stackHead);
       cpu.setFlag(Flags.Zero, cpu.acc === 0x00);
       cpu.setFlag(Flags.Negative, cpu.acc & 0x80);
       return 0;
     }
+    case OperationType.RTI:
+      cpu.stackPointer += 1;
+      cpu.status = cpu.read(cpu.stackHead);
+      cpu.status &= ~Flags.Break;
+      cpu.status &= ~Flags.Unused;
+
+      cpu.stackPointer += 1;
+      cpu.pc = cpu.read(cpu.stackHead);
+      cpu.stackPointer += 1;
+      cpu.pc |= cpu.read(cpu.stackHead) << 8;
+      return 0;
   }
   return 0;
 }

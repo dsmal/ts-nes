@@ -46,6 +46,10 @@ export default class Cpu {
     this.cycles -= 1;
   }
 
+  get stackHead(): number {
+    return 0x0100 + this.stackPointer;
+  }
+
   reset() {
     this.acc = 0;
     this.x = 0;
@@ -65,8 +69,35 @@ export default class Cpu {
     this.cycles = 8;
   }
 
-  irq() {}
-  nmi() {}
+  private interrupt(maskable: boolean): number {
+    const newPc = maskable ? 0xFFEE : 0xFFFA;
+    this.write(this.stackHead, (this.pc >> 8) & 0x00FF);
+    this.stackPointer -= 1;
+    this.write(this.stackHead, this.pc & 0x00FF);
+    this.stackPointer -= 1;
+
+    this.setFlag(Flags.Break, false);
+    this.setFlag(Flags.Unused, true);
+    this.setFlag(Flags.InterruptsDisable, true);
+    this.write(this.stackHead, this.status);
+    this.stackPointer -= 1;
+
+    this.absoluteAddress = newPc;
+    const lo = this.read(this.absoluteAddress);
+    const hi = this.read(this.absoluteAddress + 1);
+    this.pc = (hi << 8) | lo;
+
+    return maskable ? 7 : 8;
+  }
+
+  irq() {
+    if (this.getFlag(Flags.InterruptsDisable)) return;
+    this.cycles = this.interrupt(true);
+  }
+
+  nmi() {
+    this.cycles = this.interrupt(false);
+  }
 
   setFlag(flag: Flags, value: number | boolean) {
     if (value) {
