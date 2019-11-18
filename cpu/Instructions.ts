@@ -1,5 +1,5 @@
 import Cpu from './Cpu';
-import CpuFlags from './CpuFlags';
+import Flags from './Flags';
 
 export const enum AddressingMode {
   IMPLIED,
@@ -263,7 +263,7 @@ export function address(mode: AddressingMode, cpu: Cpu) {
   return 0;
 }
 
-function branch(condition: boolean, cpu: Cpu) {
+function branch(condition: number | boolean, cpu: Cpu) {
   if (condition) {
     cpu.cycles += 1;
     cpu.absoluteAddress = cpu.pc = cpu.relativeAddress;
@@ -278,47 +278,81 @@ function branch(condition: boolean, cpu: Cpu) {
 export function operate(operation: OperationType, cpu: Cpu) {
   switch (operation) {
     case OperationType.AND:
-      cpu.acc  = cpu.acc & cpu.fetch();
-      cpu.setFlag(CpuFlags.Zero, cpu.acc === 0x00);
-      cpu.setFlag(CpuFlags.Negative, !!(cpu.acc & 0x80));
+      cpu.fetch();
+      cpu.acc  = cpu.acc & cpu.fetched;
+      cpu.setFlag(Flags.Zero, cpu.acc === 0x00);
+      cpu.setFlag(Flags.Negative, !!(cpu.acc & 0x80));
       return 1;
     case OperationType.BCS:
-      return branch(cpu.getFlag(CpuFlags.CarryBit), cpu);
+      return branch(cpu.getFlag(Flags.CarryBit), cpu);
     case OperationType.BCC:
-      return branch(!cpu.getFlag(CpuFlags.CarryBit), cpu);
+      return branch(!cpu.getFlag(Flags.CarryBit), cpu);
     case OperationType.BEQ:
-      return branch(cpu.getFlag(CpuFlags.Zero), cpu);
+      return branch(cpu.getFlag(Flags.Zero), cpu);
     case OperationType.BMI:
-      return branch(cpu.getFlag(CpuFlags.Negative), cpu);
+      return branch(cpu.getFlag(Flags.Negative), cpu);
     case OperationType.BNE:
-      return branch(!cpu.getFlag(CpuFlags.Zero), cpu);
+      return branch(!cpu.getFlag(Flags.Zero), cpu);
     case OperationType.BPL:
-      return branch(!cpu.getFlag(CpuFlags.Negative), cpu);
+      return branch(!cpu.getFlag(Flags.Negative), cpu);
     case OperationType.BVC:
-      return branch(!cpu.getFlag(CpuFlags.Overflow), cpu);
+      return branch(!cpu.getFlag(Flags.Overflow), cpu);
     case OperationType.BVS:
-      return branch(cpu.getFlag(CpuFlags.Overflow), cpu);
+      return branch(cpu.getFlag(Flags.Overflow), cpu);
     case OperationType.CLC:
-      cpu.setFlag(CpuFlags.CarryBit, false);
+      cpu.setFlag(Flags.CarryBit, false);
       return 0;
     case OperationType.SEC:
-      cpu.setFlag(CpuFlags.CarryBit, true);
+      cpu.setFlag(Flags.CarryBit, true);
       return 0;
     case OperationType.CLD:
-      cpu.setFlag(CpuFlags.DecimalMode, false);
+      cpu.setFlag(Flags.DecimalMode, false);
       return 0;
     case OperationType.SED:
-      cpu.setFlag(CpuFlags.DecimalMode, true);
+      cpu.setFlag(Flags.DecimalMode, true);
       return 0;
     case OperationType.SEI:
-      cpu.setFlag(CpuFlags.InterruptsDisable, true);
+      cpu.setFlag(Flags.InterruptsDisable, true);
       return 0;
     case OperationType.CLI:
-      cpu.setFlag(CpuFlags.InterruptsDisable, false);
+      cpu.setFlag(Flags.InterruptsDisable, false);
       return 0;
     case OperationType.CLV:
-      cpu.setFlag(CpuFlags.Overflow, false);
+      cpu.setFlag(Flags.Overflow, false);
       return 0;
+    case OperationType.ADC: {
+      cpu.fetch();
+      const t = cpu.acc + cpu.fetched + cpu.getFlag(Flags.CarryBit);
+      cpu.setFlag(Flags.CarryBit, t > 255);
+      cpu.setFlag(Flags.Zero, (t & 0x00FF) === 0);
+      cpu.setFlag(Flags.Negative, t & 0x80);
+      cpu.setFlag(Flags.Overflow, (~cpu.acc ^ cpu.fetched) & (cpu.acc ^ t) & 0x0080);
+      cpu.acc = t & 0x00FF;
+      return 1;
+    }
+    case OperationType.SBC: {
+      cpu.fetch();
+      const value = cpu.fetched ^ 0x00FF;
+      const t = cpu.acc + value + cpu.getFlag(Flags.CarryBit);
+      cpu.setFlag(Flags.CarryBit, t & 0xFF00);
+      cpu.setFlag(Flags.Zero, ((t & 0x00FF) === 0));
+      cpu.setFlag(Flags.Overflow, (t ^ cpu.acc) & (t ^ value) & 0x0080);
+      cpu.setFlag(Flags.Negative, t & 0x0080);
+      cpu.acc = t & 0x00FF;
+      return 1;
+    }
+    case OperationType.PHA: {
+      cpu.write(0x0100 + cpu.stackPointer, cpu.acc);
+      cpu.stackPointer -= 1;
+      return 0;
+    }
+    case OperationType.PLA: {
+      cpu.stackPointer += 1;
+      cpu.acc = cpu.read(0x0100 + cpu.stackPointer);
+      cpu.setFlag(Flags.Zero, cpu.acc === 0x00);
+      cpu.setFlag(Flags.Negative, cpu.acc & 0x80);
+      return 0;
+    }
   }
   return 0;
 }

@@ -1,4 +1,4 @@
-enum CpuFlags {
+enum Flags {
   CarryBit = (1 << 0),            // C
   Zero = (1 << 1),                // Z
   InterruptsDisable = (1 << 2),   // I
@@ -9,4 +9,4 @@ enum CpuFlags {
   Negative = (1 << 7),            // N
 }
 
-export default CpuFlags;
+export default Flags;

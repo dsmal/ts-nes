@@ -1,10 +1,10 @@
 import Bus from '../bus/Bus';
-import CpuFlags from './CpuFlags';
+import Flags from './Flags';
 import { address, operate, opCodes, AddressingMode } from './Instructions';
 
 export default class Cpu {
   bus: Bus;
-  flags: CpuFlags = 0x00;
+  flags: Flags = 0x00;
   acc = 0x00;
   x = 0x00;
   y = 0x00;
@@ -50,7 +50,7 @@ export default class Cpu {
   irq() {}
   nmi() {}
 
-  setFlag(flag: CpuFlags, value: boolean) {
+  setFlag(flag: Flags, value: number | boolean) {
     if (value) {
       this.flags |= flag;
     } else {
@@ -58,8 +58,8 @@ export default class Cpu {
     }
   }
 
-  getFlag(flag: CpuFlags) {
-    return (this.flags & flag) > 0;
+  getFlag(flag: Flags): number {
+    return (this.flags & flag) > 0 ? 1 : 0;
   }
 
   fetch(): number {
