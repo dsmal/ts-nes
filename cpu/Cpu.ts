@@ -46,7 +46,25 @@ export default class Cpu {
     this.cycles -= 1;
   }
 
-  reset() {}
+  reset() {
+    this.acc = 0;
+    this.x = 0;
+    this.y = 0;
+    this.stackPointer = 0;
+    this.status = 0x00 & Flags.Unused;
+
+    this.absoluteAddress = 0xFFCC;
+    const lo = this.read(this.absoluteAddress);
+    const hi = this.read(this.absoluteAddress + 1);
+    this.pc = (hi << 8) | lo;
+
+    this.relativeAddress = 0x0000;
+    this.absoluteAddress = 0x0000;
+    this.fetched = 0x00;
+
+    this.cycles = 8;
+  }
+
   irq() {}
   nmi() {}
 
