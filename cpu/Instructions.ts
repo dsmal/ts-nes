@@ -1,4 +1,5 @@
 import Cpu from './Cpu';
+import CpuFlags from './CpuFlags';
 
 export const enum AddressingMode {
   IMPLIED,
@@ -262,6 +263,62 @@ export function address(mode: AddressingMode, cpu: Cpu) {
   return 0;
 }
 
+function branch(condition: boolean, cpu: Cpu) {
+  if (condition) {
+    cpu.cycles += 1;
+    cpu.absoluteAddress = cpu.pc = cpu.relativeAddress;
+    if ((cpu.absoluteAddress & 0xFF00) !== (cpu.pc & 0xFF00)) {
+      cpu.cycles += 1;
+    }
+    cpu.pc = cpu.absoluteAddress;
+  }
+  return 0;
+}
+
 export function operate(operation: OperationType, cpu: Cpu) {
+  switch (operation) {
+    case OperationType.AND:
+      cpu.acc  = cpu.acc & cpu.fetch();
+      cpu.setFlag(CpuFlags.Zero, cpu.acc === 0x00);
+      cpu.setFlag(CpuFlags.Negative, !!(cpu.acc & 0x80));
+      return 1;
+    case OperationType.BCS:
+      return branch(cpu.getFlag(CpuFlags.CarryBit), cpu);
+    case OperationType.BCC:
+      return branch(!cpu.getFlag(CpuFlags.CarryBit), cpu);
+    case OperationType.BEQ:
+      return branch(cpu.getFlag(CpuFlags.Zero), cpu);
+    case OperationType.BMI:
+      return branch(cpu.getFlag(CpuFlags.Negative), cpu);
+    case OperationType.BNE:
+      return branch(!cpu.getFlag(CpuFlags.Zero), cpu);
+    case OperationType.BPL:
+      return branch(!cpu.getFlag(CpuFlags.Negative), cpu);
+    case OperationType.BVC:
+      return branch(!cpu.getFlag(CpuFlags.Overflow), cpu);
+    case OperationType.BVS:
+      return branch(cpu.getFlag(CpuFlags.Overflow), cpu);
+    case OperationType.CLC:
+      cpu.setFlag(CpuFlags.CarryBit, false);
+      return 0;
+    case OperationType.SEC:
+      cpu.setFlag(CpuFlags.CarryBit, true);
+      return 0;
+    case OperationType.CLD:
+      cpu.setFlag(CpuFlags.DecimalMode, false);
+      return 0;
+    case OperationType.SED:
+      cpu.setFlag(CpuFlags.DecimalMode, true);
+      return 0;
+    case OperationType.SEI:
+      cpu.setFlag(CpuFlags.InterruptsDisable, true);
+      return 0;
+    case OperationType.CLI:
+      cpu.setFlag(CpuFlags.InterruptsDisable, false);
+      return 0;
+    case OperationType.CLV:
+      cpu.setFlag(CpuFlags.Overflow, false);
+      return 0;
+  }
   return 0;
 }

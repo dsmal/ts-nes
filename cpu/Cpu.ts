@@ -1,6 +1,6 @@
 import Bus from '../bus/Bus';
 import CpuFlags from './CpuFlags';
-import { address, operate, opCodes } from './Instructions';
+import { address, operate, opCodes, AddressingMode } from './Instructions';
 
 export default class Cpu {
   bus: Bus;
@@ -49,7 +49,23 @@ export default class Cpu {
   reset() {}
   irq() {}
   nmi() {}
+
+  setFlag(flag: CpuFlags, value: boolean) {
+    if (value) {
+      this.flags |= flag;
+    } else {
+      this.flags &= ~flag;
+    }
+  }
+
+  getFlag(flag: CpuFlags) {
+    return (this.flags & flag) > 0;
+  }
+
   fetch(): number {
-    return 0x00;
+    if (opCodes[this.opcode][1] === AddressingMode.IMPLIED) {
+      this.fetched = this.read(this.absoluteAddress);
+    }
+    return this.fetched;
   }
 }
