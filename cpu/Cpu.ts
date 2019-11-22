@@ -41,7 +41,7 @@ export default class Cpu {
       this.opcode = this.read(this.pc);
       const [operation, addressing, cycles] = opCodes[this.opcode];
       this.pc += 1;
-      this.cycles += cycles + (address(addressing, this) & operate(operation, this));
+      this.cycles += cycles + (address(addressing, this) & operate(addressing, operation, this));
     }
     this.cycles -= 1;
   }
@@ -105,6 +105,11 @@ export default class Cpu {
     } else {
       this.flags &= ~flag;
     }
+  }
+
+  setZNFlags(value: number) {
+    this.setFlag(Flags.Zero, value === 0x00);
+    this.setFlag(Flags.Negative, value & 0x80);
   }
 
   getFlag(flag: Flags): number {
