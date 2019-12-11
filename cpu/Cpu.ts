@@ -10,7 +10,6 @@ export default class Cpu {
   y = 0x00;
   stackPointer = 0x00;
   pc = 0x00;
-  status = 0x00;
 
   fetched = 0x00;
   absoluteAddress = 0x0000;
@@ -38,12 +37,15 @@ export default class Cpu {
 
   clock() {
     if (this.cycles === 0) {
-      this.opcode = this.read(this.pc);
+      this.opcode = this.readPc();
       const [operation, addressing, cycles] = opCodes[this.opcode];
-      this.pc += 1;
       this.cycles += cycles + (address(addressing, this) & operate(addressing, operation, this));
     }
     this.cycles -= 1;
+  }
+
+  get ready() {
+    return this.cycles === 0;
   }
 
   get stackHead(): number {
@@ -54,10 +56,10 @@ export default class Cpu {
     this.acc = 0;
     this.x = 0;
     this.y = 0;
-    this.stackPointer = 0;
-    this.status = 0x00 & Flags.Unused;
+    this.stackPointer = 0xFF;
+    this.flags = 0x00 & Flags.Unused;
 
-    this.absoluteAddress = 0xFFCC;
+    this.absoluteAddress = 0xFFFC;
     const lo = this.read(this.absoluteAddress);
     const hi = this.read(this.absoluteAddress + 1);
     this.pc = (hi << 8) | lo;
@@ -79,7 +81,7 @@ export default class Cpu {
     this.setFlag(Flags.Break, false);
     this.setFlag(Flags.Unused, true);
     this.setFlag(Flags.InterruptsDisable, true);
-    this.write(this.stackHead, this.status);
+    this.write(this.stackHead, this.flags);
     this.stackPointer -= 1;
 
     this.absoluteAddress = newPc;
@@ -117,7 +119,7 @@ export default class Cpu {
   }
 
   fetch(): number {
-    if (opCodes[this.opcode][1] === AddressingMode.IMPLIED) {
+    if (opCodes[this.opcode][1] !== AddressingMode.IMPLIED) {
       this.fetched = this.read(this.absoluteAddress);
     }
     return this.fetched;

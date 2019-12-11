@@ -1,7 +1,7 @@
 import Cpu from './Cpu';
 import Flags from './Flags';
 
-export const enum AddressingMode {
+export enum AddressingMode {
   IMPLIED,
   ACCUMULATOR,
   IMMEDIATE,
@@ -17,7 +17,7 @@ export const enum AddressingMode {
   RELATIVE,
 }
 
-export const enum OperationType {
+export enum OperationType {
   NOP, LDA, STA, LDX, STX, LDY, STY, TAX,
   TAY, TXA, TYA, TXS, TSX, ADC, SBC, INX,
   INY, INC, DEX, DEY, DEC, AND, ORA, EOR,
@@ -27,7 +27,7 @@ export const enum OperationType {
   CLC, SEC, SEI, CLI, CLV, SED, CLD, BRK,
 }
 
-export const opCodes: { [key: number]: number[] }  = {
+export const opCodes: { [key: number]: [OperationType, AddressingMode, number] }  = {
   0x00: [OperationType.BRK, AddressingMode.IMPLIED, 7],
   0x01: [OperationType.ORA, AddressingMode.INDIRECT, 6],
   0x05: [OperationType.ORA, AddressingMode.ZEROPAGE, 3],
@@ -253,10 +253,8 @@ export function address(mode: AddressingMode, cpu: Cpu) {
       return (cpu.absoluteAddress & 0xFF00) !== (hi << 8) ? 1 : 0;
     }
     case AddressingMode.RELATIVE: {
-      cpu.relativeAddress = cpu.readPc();
-      if (cpu.relativeAddress & 0x80) {
-        cpu.relativeAddress |= 0xFF00;
-      }
+      const rel = cpu.readPc();
+      cpu.relativeAddress = rel < 0x80 ? rel : rel - 0x0100;
       return 0;
     }
   }
@@ -266,7 +264,7 @@ export function address(mode: AddressingMode, cpu: Cpu) {
 function branch(condition: number | boolean, cpu: Cpu) {
   if (condition) {
     cpu.cycles += 1;
-    cpu.absoluteAddress = cpu.pc = cpu.relativeAddress;
+    cpu.absoluteAddress = cpu.pc + cpu.relativeAddress;
     if ((cpu.absoluteAddress & 0xFF00) !== (cpu.pc & 0xFF00)) {
       cpu.cycles += 1;
     }
@@ -345,6 +343,7 @@ export function operate(mode: AddressingMode, operation: OperationType, cpu: Cpu
     case OperationType.DEY:
       cpu.y -= 1;
       cpu.setZNFlags(cpu.y);
+      return 0;
     case OperationType.DEC: {
       const value = cpu.fetch() - 1;
       cpu.write(cpu.absoluteAddress, value & 0x00FF);
@@ -359,6 +358,7 @@ export function operate(mode: AddressingMode, operation: OperationType, cpu: Cpu
     case OperationType.EOR:
       cpu.acc = cpu.acc ^ cpu.fetch();
       cpu.setZNFlags(cpu.acc);
+      return 0;
     case OperationType.AND:
       cpu.fetch();
       cpu.acc  = cpu.acc & cpu.fetched;
@@ -526,21 +526,21 @@ export function operate(mode: AddressingMode, operation: OperationType, cpu: Cpu
       cpu.setZNFlags(cpu.acc);
       return 0;
     case OperationType.PHP:
-      cpu.write(cpu.stackHead, cpu.status | Flags.Break | Flags.Unused);
+      cpu.write(cpu.stackHead, cpu.flags | Flags.Break | Flags.Unused);
       cpu.setFlag(Flags.Break, false);
       cpu.setFlag(Flags.Unused, false);
       cpu.stackPointer -= 1;
       return 0;
     case OperationType.PLP:
       cpu.stackPointer += 1;
-      cpu.status = cpu.read(cpu.stackHead);
+      cpu.flags = cpu.read(cpu.stackHead);
       cpu.setFlag(Flags.Unused, true);
       return 0;
     case OperationType.RTI:
       cpu.stackPointer += 1;
-      cpu.status = cpu.read(cpu.stackHead);
-      cpu.status &= ~Flags.Break;
-      cpu.status &= ~Flags.Unused;
+      cpu.flags = cpu.read(cpu.stackHead);
+      cpu.flags &= ~Flags.Break;
+      cpu.flags &= ~Flags.Unused;
       cpu.stackPointer += 1;
       cpu.pc = cpu.read(cpu.stackHead);
       cpu.stackPointer += 1;
@@ -561,10 +561,11 @@ export function operate(mode: AddressingMode, operation: OperationType, cpu: Cpu
       cpu.write(cpu.stackHead, cpu.pc & 0x00FF);
       cpu.stackPointer -= 1;
       cpu.setFlag(Flags.Break, true);
-      cpu.write(cpu.stackHead, cpu.status);
+      cpu.write(cpu.stackHead, cpu.flags);
       cpu.stackPointer -= 1;
       cpu.setFlag(Flags.Break, false);
       cpu.pc = cpu.read(0xFFFE) | (cpu.read(0xFFFF) << 8);
+      return 0;
   }
   return 0;
 }
