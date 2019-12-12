@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "rollup": "^1.27.11",
     "rollup-plugin-bundle-html": "^0.2.2",
     "rollup-plugin-delete": "^1.1.0",
     "rollup-plugin-livereload": "^1.0.4",
