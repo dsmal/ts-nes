@@ -1,3 +1,4 @@
+import './styles.scss';
 import Bus from './bus/Bus';
 import { disassemble } from './cpu/Disassembler';
 import Flags from './cpu/Flags';

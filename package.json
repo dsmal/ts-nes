@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c --environment INCLUDE_DEPS,BUILD:production",
     "watch": "rollup -c -w",
     "dev": "npm-run-all --parallel start watch",
     "start": "serve public",
@@ -13,14 +13,17 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "rollup-plugin-bundle-html": "^0.2.2",
+    "rollup-plugin-delete": "^1.1.0",
+    "rollup-plugin-livereload": "^1.0.4",
+    "rollup-plugin-scss": "^1.0.2",
+    "rollup-plugin-serve": "^1.0.1",
     "rollup-plugin-typescript": "^1.0.1",
+    "rollup-plugin-uglify": "^6.0.4",
     "tslib": "^1.10.0",
     "tslint": "^5.20.1",
-    "typescript": "^3.7.2",
-    "rollup-plugin-livereload": "^1.0.4",
-    "rollup-plugin-serve": "^1.0.1",
-    "tslint-config-airbnb": "^5.11.2"
+    "tslint-config-airbnb": "^5.11.2",
+    "typescript": "^3.7.2"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }

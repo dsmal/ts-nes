@@ -8,21 +8,21 @@ body {
 
 #disasm {
   width: 250px;
-}
 
-#disasm > .active:before {
-  content: '>';
-  margin-left: -.5rem;
+  > .active:before {
+    content: '>';
+    margin-left: -.5rem;
+  }
 }
 
 #flags {
   width: 200px;
   justify-content: space-between;
   display: flex;
-}
 
-#flags > div {
-  transition: color 0.2s ease;
+  > div {
+    transition: color 0.2s ease;
+  }
 }
 
 .active {
